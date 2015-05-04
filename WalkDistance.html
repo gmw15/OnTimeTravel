@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html>
+  <head>
+<script type="text/javascript" src="js/jquery-1.4.1.min.js"></script>
+  <script type="text/javascript" src="js/custom.js"></script>
+    <title>On Time Travel</title>
+    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      #map-canvas {
+	  margin-left: 10px;
+        height: 100%;
+        width: 45%;
+      }
+      #content-pane {
+        float:right;
+        width:40%;
+        padding-left: 2%;
+		padding-top: 6%;
+      }
+      #outputDiv {
+        font-size: 11px;
+      }
+    </style>
+    <script>
+var map;
+var geocoder;
+var bounds = new google.maps.LatLngBounds();
+var markersArray = [];
+
+var origin1 = 'Clondalkin, Dublin, Ireland';
+var destinationA = 'Tallaght, Dublin, Ireland';
+
+var destinationIcon = 'person.png';
+var originIcon = 'trainMarker.png';
+
+var directionsDisplay;
+var directionsService = new google.maps.DirectionsService();
+
+function initialize() {
+directionsDisplay = new google.maps.DirectionsRenderer();
+  var opts = {
+    center: new google.maps.LatLng(53.34, -6.2),
+    zoom: 8
+  };
+  map = new google.maps.Map(document.getElementById('map-canvas'), opts);
+  geocoder = new google.maps.Geocoder();
+  directionsDisplay.setMap(map);
+}
+
+function calculateDistances() {
+  var service = new google.maps.DistanceMatrixService();
+  service.getDistanceMatrix(
+    {
+      origins: [document.getElementById('start').value],
+      destinations: [document.getElementById('end').value],
+      travelMode: google.maps.TravelMode.WALKING,
+      unitSystem: google.maps.UnitSystem.METRIC,
+      avoidHighways: false,
+      avoidTolls: false
+    }, callback);
+}
+
+function callback(response, status) {
+  if (status != google.maps.DistanceMatrixStatus.OK) {
+    alert('Error was: ' + status);
+  } else {
+    var origins = response.originAddresses;
+    var destinations = response.destinationAddresses;
+    var outputDiv = document.getElementById('outputDiv');
+    outputDiv.innerHTML = '';
+    deleteOverlays();
+
+    for (var i = 0; i < origins.length; i++) {
+      var results = response.rows[i].elements;
+      addMarker(origins[i], false);
+      for (var j = 0; j < results.length; j++) {
+        addMarker(destinations[j], true);
+        outputDiv.innerHTML += origins[i] + ' to ' + destinations[j]
+            + ': ' + results[j].distance.text + ' in '
+            + results[j].duration.text + '<br>';
+      }
+    }
+  }
+}
+
+function addMarker(location, isDestination) {
+  var icon;
+  geocoder.geocode({'address': location}, function(results, status) {
+    if (status == google.maps.GeocoderStatus.OK) {
+      bounds.extend(results[0].geometry.location);
+      map.fitBounds(bounds);
+      var marker = new google.maps.Marker({
+        map: map,
+        position: results[0].geometry.location,
+        icon: icon
+      });
+      markersArray.push(marker);
+    } else {
+      alert('Geocode was not successful for the following reason: '
+        + status);
+    }
+  });
+}
+
+function deleteOverlays() {
+  for (var i = 0; i < markersArray.length; i++) {
+    markersArray[i].setMap(null);
+  }
+  markersArray = [];
+}
+
+function calcRoute() {
+  var start = document.getElementById('start').value;
+  var end = document.getElementById('end').value;
+ 
+
+  var request = {
+      origin: start,
+      destination: end,
+      optimizeWaypoints: true,
+      travelMode: google.maps.TravelMode.WALKING
+  };
+  directionsService.route(request, function(response, status) {
+    if (status == google.maps.DirectionsStatus.OK) {
+      directionsDisplay.setDirections(response);
+      var route = response.routes[0];
+      var summaryPanel = document.getElementById('directions_panel');
+      summaryPanel.innerHTML = '';
+      // For each route, display summary information.
+      for (var i = 0; i < route.legs.length; i++) {
+        var routeSegment = i + 1;
+        summaryPanel.innerHTML += '<b>Route Segment: ' + routeSegment + '</b><br>';
+        summaryPanel.innerHTML += route.legs[i].start_address + ' to ';
+        summaryPanel.innerHTML += route.legs[i].end_address + '<br>';
+        summaryPanel.innerHTML += route.legs[i].distance.text + '<br><br>';
+      }
+    }
+  });
+  }
+
+google.maps.event.addDomListener(window, 'load', initialize);
+
+    </script>
+	<link rel="icon" type="image/png" href="logo2-20140405-favicon.ico"/>
+	<link rel="stylesheet" href="css/styles.css">
+  </head>
+  <body background="blue.jpg">
+<br /><br />
+<font face='Verdana' size='5' color='white' align='right'><a href=logout.php>Logout</a></font>
+<center><font face="Verdana" size="7" color="white">On Time Travel</font></center>
+<img alt='logo' src='flip.png' height='150px' width='150px' align='left' />
+<img alt='logo' src='trainLogo.png' height='150px' width='150px' align="right" /> 
+
+<div class="masthead">
+      
+	  
+	  
+	  <br />
+	  
+	  
+	  
+      <div id="wrapper">
+	<div id="header">
+      <div id="list1">
+            <ul class="menu">
+              <li class="active"><a href="members.php" data-toggle="tab">Main Menu</a></li>
+              
+			  <li><a href="CarDistance1.html" data-toggle="tab">Car Distance</a></li>
+              <!--<li><a href="#train-list-page" data-toggle="tab">Train List</a></li>-->
+              </ul>
+          </div>
+        </div>
+		</div>
+		  </div>		
+		
+    <div id="content-pane">
+      <div id="inputs">
+	  <pre>
+<div id="directions_panel" style="margin:20px;background-color:#FFEE77;"></div>
+<div id="outputDiv"></div>
+	  <div id="control_panel" style="float:left;width:30%;text-align:left;padding-top:20px">
+    <div style="margin:20px;border-width:2px;">
+    <b>Location:</b>
+    <input type="text" name="address2" id="start" size="50"/>
+    <br>
+    <b>Station:</b>
+    <select id="end">
+      <option value="clondalkin train station, Dublin, Ireland">Clondalkin</option>
+	  <option value="Connolly station, Dublin, Ireland">Connolly</option>
+	  <option value="Shankill station, Dublin, Ireland">Shankill</option>
+	  <option value="Lucan, Dublin, Ireland">Lucan</option>
+	  <option value="Heuston Station, Dublin, Ireland">Heuston Station</option>
+	  <option value="Belfast central station, belfast, Ireland">Belfast Central</option>
+	  <option value="Sligo station, sligo, Ireland">Sligo</option>
+	  <option value="Ballina station, Mayo, Ireland">Ballina</option>
+	  <option value="Dundalk  station, dundalk, Ireland">Dundalk</option>
+	  <option value="Lisburn station, Lisburn, Ireland">Lisburn</option>
+	  <option value="Lurgan station, Lurgan, Ireland">Lurgan</option>
+	  <option value="Newry station, newry, Ireland">Newry</option>
+	  <option value="Collooney station, Collooney, Ireland">Collooney</option>
+	  <option value="Ballymote station, ballymote, Ireland">Ballymote</option>
+	  <option value="Foxford station, foxford, Ireland">Foxford</option>
+	  <option value="Boyle station, boyle, Ireland">Boyle</option>
+	  <option value="Carrick on Shannon station, Carrick on Shannon, Ireland">Carrick on Shannon</option>
+	  <option value="Dromod station, dromod, Ireland">Dromod</option>
+	  <option value="castlebar station, castlebar, Ireland">Castlebar</option>
+	  <option value="manulla junction station, manulla junction, Ireland">Manulla Junction</option>
+	  <option value="westport station, westport, Ireland">Westport</option>
+	  <option value="ballyhaunis station, ballyhaunis, Ireland">Ballyhaunis</option>
+	  <option value="longford station, longford, Ireland">Longford</option>
+	  <option value="claremorris station, claremorris, Ireland">Claremorris</option>
+	  <option value="drogheda station, drogheda, Ireland">Drogheda</option>
+	  <option value="edgeworthstown station, edgeworthstown, Ireland">Edgeworthstown</option>
+	  <option value="laytown station, laytown, Ireland">Laytown</option>
+	  <option value="gormanstown station, gormanstown, Ireland">Gormanstown</option>
+	  <option value="roscommon station, roscommon, Ireland">Roscommon</option>
+	  <option value="balbriggan station, balbriggan, Ireland">Balbriggan</option>
+	  <option value="mullingar station, mullingar, Ireland">Mullingar</option>
+	  <option value="rush and lusk station, rush and lusk, Ireland">Rush and Lusk</option>
+	  <option value="donabate station, donabate, Ireland">Donabate</option>
+	  <option value="malahide station, malahide, Ireland">Malahide</option>
+	  <option value="m3 parkway station, m3 parkway, Ireland">M3 Parkway</option>
+	  <option value="athlone station, athlone, Ireland">Athlone</option>
+	  <option value="dunboyne station, dunboyne, Ireland">Dunboyne</option>
+	  <option value="portmarnock station, portmarnock, Ireland">Portmarnock</option>
+	  <option value="enfield station, enfield, Ireland">Enfield</option>
+	  <option value="kilcock station, kilcock, Ireland">kilcock</option>
+	  <option value="clongriffin station, clongriffin, Ireland">Clongriffin</option>
+	  <option value="sutton station, sutton, Ireland">Sutton</option>
+	  <option value="bayside station, bayside, Ireland">Bayside</option>
+	  <option value="howth junction station, howth junction, Ireland">Howth Junction</option>
+	  <option value="howth station, howth, Ireland">Howth</option>
+	  <option value="kilbarrack station, kilbarrack, Ireland">Kilbarrack</option>
+	  <option value="hansfield station, hansfield, Ireland">Hansfield</option>
+	  <option value="clonsilla station, clonsilla, Ireland">Clonsilla</option>
+	  <option value="castleknock station, castleknock, Ireland">Castleknock</option>
+	  <option value="raheny station, raheny, Ireland">Raheny</option>
+	  <option value="harmonstown station, harmonstown, Ireland">Harmonstown</option>
+	  <option value="maynooth station, maynooth, Ireland">Maynooth</option>
+	  <option value="navan road parkway station, navan road parkway, Ireland">Navan Road Parkway</option>
+	  <option value="coolmine station, coolmine, Ireland">Coolmine</option>
+	  <option value="leixlip station, leixlip, Ireland">Leixlip</option>
+	  <option value="killester station, killester, Ireland">Killester</option>
+	  <option value="broombridge station, broombridge, Ireland">Broombridge</option>
+	  <option value="drumcondra station, drumcondra, Ireland">Drumcondra</option>
+	  <option value="clontarf road station, clontarf, Ireland">Clontarf</option>
+	  <option value="docklands station, docklands, Ireland">Docklands</option>
+	  <option value="tara street station, tara street, Ireland">Tara Street</option>
+	  <option value="pearse station, pearse station, Ireland">Pearse Street Station</option>
+	  <option value="wood lawn station, wood lawn, Ireland">Wood Lawn</option>
+	  <option value="grand canal dock station, grand canal dock, Ireland">Grand Canal Dock</option>
+	  <option value="clara station, clara, Ireland">Clara</option>
+	  <option value="ballinasloe station, ballinasloe, Ireland">Ballinasloe</option>
+	  <option value="adamstown station, adamstown, Ireland">Adamstown</option>
+	  <option value="lansdowne road station, lansdowne road, Ireland">Lansdowne Road</option>
+	  <option value="cherry orchard station, cherry orchard, Ireland">Cherry Orchard</option>
+	  <option value="sandymount station, sandymount, Ireland">Sandymount</option>
+	  <option value="hazelhatch station, hazelhatch, Ireland">Hazelhatch</option>
+	  <option value="attymon station, attymon, Ireland">Attymon</option>
+	  <option value="sydney parade station, sydney parade, Ireland">Sydney Parade</option>
+	  <option value="booterstown station, booterstown, Ireland">Booterstown</option>
+	  <option value="blackrock station, blackrock, Ireland">Blackrock</option>
+	  <option value="athenry station, athenry, Ireland">Athenry</option>
+	  <option value="seapoint station, seapoint, Ireland">Seapoint</option>
+	  <option value="salthill station, salthill, Ireland">Salthill</option>
+	  <option value="dun laoghaire station, dun laoghaire, Ireland">Dun Laoghaire</option>
+	  <option value="sandycove station, sandycove, Ireland">Sandycove</option>
+	  <option value="glenageary station, glenageary, Ireland">Glenageary</option>
+	  <option value="oranmore station, oranmore, Ireland">Oranmore</option>
+	  <option value="galway station, galway, Ireland">Galway</option>
+	  <option value="tullamore station, tullamore, Ireland">Tullamore</option>
+	  <option value="killiney station, killiney, Ireland">Killiney</option>
+	  <option value="sallins station, sallins, Ireland">Sallins</option>
+	  <option value="craughwell station, craughwell, Ireland">Craughwell</option>
+	  <option value="woodbrook station, woodbrook, Ireland">Woodbrook</option>
+	  <option value="bray station, bray, Ireland">Bray</option>
+	  <option value="newbridge station, newbridge, Ireland">Newbridge</option>
+	  <option value="curragh station, curragh, Ireland">Curragh</option>
+	  <option value="ardrahan station, ardrahan, Ireland">Ardrahan</option>
+	  <option value="portalington station, portalington, Ireland">Portalington</option>
+	  <option value="monasterevin station, monasterevin, Ireland">Monasterevin</option>
+	  <option value="greystones station, greystones, Ireland">Greystones</option>
+	  <option value="kilcoole station, kilcoole, Ireland">Kilcoole</option>
+	  <option value="gory station, gory, Ireland">Gory</option>
+	  <option value="portlaoise station, portlaoise, Ireland">Portlaoise</option>
+	  <option value="athy station, athy, Ireland">Athy</option>
+	  <option value="wicklow station, wicklow, Ireland">Wicklow</option>
+	  <option value="roscrea station, roscrea, Ireland">Roscrea</option>
+	  <option value="cloughjordan station, cloughjordan, Ireland">Cloughjordan</option>
+	  <option value="ballybrophy station, ballybrophy, Ireland">Ballybrophy</option>
+	  <option value="nenagh station, nenagh, Ireland">Nenagh</option>
+	  <option value="carlow station, carlow, Ireland">Carlow</option>
+	  <option value="ennis station, ennis, Ireland">Ennis</option>
+	  <option value="arklow station, arklow, Ireland">Arklow</option>
+	  <option value="templemore station, templemore, Ireland">Templemore</option>
+	  <option value="birdhill station, birdhill, Ireland">Birdhill</option>
+	  <option value="sixmillbridge station, sixmillbridge, Ireland">Sixmillbridge</option>
+	  <option value="castleconnell station, castleconnell, Ireland">Castleconnell</option>
+	  <option value="muine bheag station, muine bheag, Ireland">Muine Bheag</option>
+	  <option value="thurles station, thurles, Ireland">Thurles</option>
+	  <option value="gorey station, gorey, Ireland">Gorey</option>
+	  <option value="limerick station, limerick, Ireland">Limerick</option>
+	  <option value="thomastown station, thomastown, Ireland">Thomastown</option>
+	  <option value="eniscorthy station, eniscorthy, Ireland">Eniscorthy</option>
+	  <option value="limerick junction station, limerick junction, Ireland">Limerick Junction</option>
+	  <option value="tipperary station, tipperary, Ireland">Tipperary</option>
+	  <option value="cahir station, cahir, Ireland">Cahir</option>
+	  <option value="clonmel station, clonmel, Ireland">Clonmel</option>
+	  <option value="carrick on suir station, carrick on suir, Ireland">Carrick on Suir</option>
+	  <option value="charleville station, charleville, Ireland">Charleville</option>
+	  <option value="wexford station, wexford, Ireland">Wexford</option>
+	  <option value="campile station, campile, Ireland">Campile</option>
+	  <option value="ballycullane station, ballycullane, Ireland">Ballycullane</option>
+	  <option value="rosslare strand station, rosslare strand, Ireland">Rosslare Strand</option>
+	  <option value="tralee station, tralee, Ireland">Tralee</option>
+	  <option value="waterford station, waterford, Ireland">Waterford</option>
+	  <option value="roslare europort station, roslare europort, Ireland">Roslare Europort</option>
+	  <option value="bridgetown station, bridgetown, Ireland">Bridgetown</option>
+	  <option value="farranfore station, farranfore, Ireland">Farranfore</option>
+	  <option value="mallow station, mallow, Ireland">Mallow</option>
+	  <option value="banteer station, banteer, Ireland">Banteer</option>
+	  <option value="rathmore station, rathmore, Ireland">Rathmore</option>
+	  <option value="millstreet station, millstreet, Ireland">Millstreet</option>
+	  <option value="killarney station, killarney, Ireland">Killarney</option>
+	  <option value="middleton station, middleton, Ireland">Middleton</option>
+	  <option value="glounthaune station, glounthaune, Ireland">Glounthaune</option>
+	  <option value="littleisland station, littleisland, Ireland">Littleisland</option>
+	  <option value="cork station, cork, Ireland">Cork</option>
+	  <option value="fota station, fota, Ireland">Fota</option>
+	  <option value="carrigaloe station, carrigaloe, Ireland">Carrigaloe</option>
+	  <option value="rushbrooke station, rushbrooke, Ireland">Rushbrooke</option>
+	  <option value="cogh station, cogh, Ireland">Cogh</option>
+	  
+	  
+    </select>
+
+<br>
+ <button onclick="calcRoute();calculateDistances();">Enter</button>
+    <br>
+    </div>
+    </div>    
+        </pre>
+      </div>
+    </div>
+	
+	
+    <div id="map-canvas"></div>
+	
+	
+  </body>
+</html>
